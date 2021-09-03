@@ -1,8 +1,10 @@
 <template>
   <div>
     <h1>{{ display_id }}</h1>
-    <div>{{ Math.floor(counter * 10) / 10 }}</div>
+    <h1>{{ Math.floor(counter * 10) / 10 }}</h1>
     <button @click="startCounter()">EMIT</button>
+
+    <div v-show="Math.floor((counter % 5) * 10) < 1" class="flash"></div>
   </div>
 </template>
 
@@ -17,6 +19,8 @@ export default {
   },
 
   mounted() {
+    // console.log(this.$route.params.display);
+    this.display_id = this.$route.params.display;
     const mcqStatus = this.$db
       .from("mcq_status")
       .on("UPDATE", payload => {
@@ -27,8 +31,6 @@ export default {
     setInterval(() => {
       this.updateStatus();
     }, 1000);
-
-    this.display_id = this.$route.params.index;
   },
   methods: {
     startCounter() {
@@ -52,4 +54,14 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style scoped>
+.flash {
+  position: absolute;
+  left: calc(50vw - 25vh);
+  top: calc(50vh - 25vh);
+  z-index: -1;
+  width: 50vh;
+  height: 50vh;
+  background: orangered;
+}
+</style>
