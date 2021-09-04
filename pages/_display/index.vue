@@ -10,6 +10,8 @@
 
 <script>
 let counterInterval;
+let logInInterval;
+let subscribeInterval;
 export default {
   data() {
     return {
@@ -19,21 +21,21 @@ export default {
   },
 
   mounted() {
-    // console.log(this.$route.params.display);
     this.display_id = this.$route.params.display;
-    const mcqStatus = this.$db
-      .from("mcq_status")
-      .on("UPDATE", payload => {
-        this.startCounter();
-      })
-      .subscribe();
-
-    setInterval(() => {
-      this.updateStatus();
-    }, 1000);
+    this.startSubscribeLoop();
   },
   methods: {
-    startCounter() {
+    startSubscribeLoop() {
+      subscribeInterval = setInterval(() => {
+        this.subscribe();
+      }, 2000);
+    },
+    startLogInLoop() {
+      logInInterval = setInterval(() => {
+        this.logIn();
+      }, 2000);
+    },
+    startAnimation() {
       console.log("start");
       clearInterval(counterInterval);
       this.counter = 0;
@@ -41,14 +43,34 @@ export default {
         this.counter += 0.1;
       }, 100);
     },
-    updateStatus() {
-      const { data, error } = this.$db
+    async subscribe() {
+      const updateSuscribe = await this.$db
+        .from("mcq_displays")
+        .on("UPDATE", payload => {
+          this.startAnimation();
+        })
+        .subscribe();
+      if (updateSuscribe) {
+        {
+          this.startLogInLoop();
+          clearInterval(subscribeInterval);
+        }
+      }
+    },
+    async logIn() {
+      const { data, error } = await this.$db
         .from("mcq_displays")
         .update({ updated_at: "now()" })
-        .eq("display", this.display_id)
-        .then(res => {
-          //   console.log(res);
-        });
+        .eq("display", this.display_id);
+      if (data) {
+        console.log(
+          "Display " +
+            data[0].display +
+            " => logged in at " +
+            data[0].updated_at
+        );
+        clearInterval(logInInterval);
+      }
     }
   }
 };
