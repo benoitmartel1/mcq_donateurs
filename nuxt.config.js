@@ -4,6 +4,17 @@ export default {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
+    script: [
+      {
+        lang: "javascript",
+        src: "https://unpkg.com/xlsx/dist/xlsx.full.min.js"
+      },
+      {
+        lang: "javascript",
+        src:
+          "https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"
+      }
+    ],
     title: "mcq_donateurs",
     htmlAttrs: {
       lang: "en"

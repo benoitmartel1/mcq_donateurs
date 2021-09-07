@@ -5179,6 +5179,13 @@ num2fraction@^1.2.2:
   resolved "https://registry.yarnpkg.com/num2fraction/-/num2fraction-1.2.2.tgz#6f682b6a027a4e9ddfa4564cd2589d1d4e669ede"
   integrity sha1-b2gragJ6Tp3fpFZM0lidHU5mnt4=
 
+nuxt-google-sheets-parser@^1.2.4:
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/nuxt-google-sheets-parser/-/nuxt-google-sheets-parser-1.2.4.tgz#13c73aa27d4863c8f4d3834ddb26daa44f681a7f"
+  integrity sha512-H4s4suN6LzvzC5QZqGNwvI7wdhn8Px1jufp/dR9XJgQV+pxWojarFB5SudjId+y/XFzdaHaR0Hj0jrY+q9bZRA==
+  dependencies:
+    public-google-sheets-parser "^1.2.4"
+
 nuxt@^2.15.7:
   version "2.15.8"
   resolved "https://registry.yarnpkg.com/nuxt/-/nuxt-2.15.8.tgz#946cba46bdaaf0e3918aa27fd9ea0fed8ed303b0"
@@ -6279,6 +6286,11 @@ public-encrypt@^4.0.0:
     parse-asn1 "^5.0.0"
     randombytes "^2.0.1"
     safe-buffer "^5.1.2"
+
+public-google-sheets-parser@^1.2.4:
+  version "1.2.5"
+  resolved "https://registry.yarnpkg.com/public-google-sheets-parser/-/public-google-sheets-parser-1.2.5.tgz#c575f028ad3b1f614ecd6119ad994d9c8d9daaa0"
+  integrity sha512-yyPRNeQ8ZTMHgY2qNnsYF4ixp8pZ9eqSwlwQWyeWYNVk6JwVPVQiAStYvrEZLf58/DkHY5qSgkzUC09jQXQzyw==
 
 pump@^2.0.0:
   version "2.0.1"

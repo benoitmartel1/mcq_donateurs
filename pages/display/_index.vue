@@ -1,30 +1,77 @@
 <template>
   <div>
-    <h1>{{ display_id }}</h1>
+    <h1>Écran {{ display_id }}</h1>
     <h1>{{ Math.floor(counter * 10) / 10 }}</h1>
-    <button @click="startCounter()">EMIT</button>
-
+    <div class="name">
+      {{
+        names[0].compagnie
+          ? names[0].compagnie
+          : names[0].prenom + " " + names[0].nom
+      }}
+    </div>
     <div v-show="Math.floor((counter % 5) * 10) < 1" class="flash"></div>
   </div>
 </template>
 
 <script>
+let numberOfDisplays = 6;
 let counterInterval;
 let logInInterval;
 let subscribeInterval;
+const hierarchy = [
+  "Visionnaire",
+  "Pionnier",
+  "Précurseur",
+  "Explorateur",
+  "Découvreur",
+  "Bâtisseur",
+  "Artisan"
+];
 export default {
   data() {
     return {
       display_id: null,
-      counter: 0
+      counter: 0,
+      names: []
     };
   },
+  async fetch() {
+    this.display_id = this.$route.params.index;
 
+    const { data, error } = await this.$db
+      .from("mcq_content")
+      .select("niveau, compagnie, nom, prenom, id");
+    if (data) {
+      this.names = this.filterNamesByDisplayId(data, this.display_id);
+    }
+  },
   mounted() {
-    this.display_id = this.$route.params.display;
     this.startSubscribeLoop();
   },
   methods: {
+    filterNamesByDisplayId(data, id) {
+      let filteredData = [];
+      let sortedData = this.sortByNiveau(data);
+      let counter = 0;
+      for (let niveau = 0; niveau < sortedData.length; niveau++) {
+        for (let item = 0; item < sortedData[niveau].items.length; item++) {
+          if (counter % numberOfDisplays == id - 1)
+            filteredData.push(sortedData[niveau].items[item]);
+          counter++;
+        }
+      }
+      return filteredData;
+    },
+    sortByNiveau(src) {
+      let temp = [];
+      hierarchy.forEach(niveau => {
+        temp.push({
+          niveau: niveau,
+          items: src.filter(item => item.niveau == niveau)
+        });
+      });
+      return temp;
+    },
     startSubscribeLoop() {
       subscribeInterval = setInterval(() => {
         this.subscribe();
@@ -76,7 +123,15 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap");
+body {
+  font-size: 36px;
+  font-family: "Lato", sans-serif;
+  text-align: center;
+}
+.name {
+}
 .flash {
   position: absolute;
   left: calc(50vw - 25vh);
