@@ -72,6 +72,7 @@ const hierarchy = [
 const columns = ["Niveau", "Compagnie", "Nom", "Prenom"];
 
 export default {
+  fetchOnServer: false,
   data() {
     return {
       data: { currentData: [], newData: [] },
@@ -94,8 +95,10 @@ export default {
         .from("mcq_content")
         .delete()
         .then(res => {
+          console.log(res.data);
           return res.data;
-        });
+        })
+        .catch(err => console.log(err));
       if (clearAllData) {
         let insertNewData = await this.$db
           .from("mcq_content")
@@ -104,6 +107,8 @@ export default {
             return res.data;
           });
         if (insertNewData) {
+          //   alert("Mis à jour");
+          console.log(insertNewData);
           location.reload();
         }
       }

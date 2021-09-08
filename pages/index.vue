@@ -1,9 +1,9 @@
 <template>
   <div>
     <button v-for="i in 6" :key="i">
-      <nuxt-link :to="'/' + i">{{ i }}</nuxt-link>
+      <nuxt-link :to="'/display/' + i">{{ i }}</nuxt-link>
     </button>
-    <table>
+    <!-- <table>
       <tr v-for="t in timeStamps" :key="t.display">
         <td>{{ t.display }}</td>
         <td class="status">
@@ -11,7 +11,7 @@
           <div v-else class="off"></div>
         </td>
       </tr>
-    </table>
+    </table> -->
 
     <!-- <button @click="emit()">EMIT</button> -->
   </div>

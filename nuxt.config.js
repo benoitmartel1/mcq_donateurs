@@ -27,7 +27,14 @@ export default {
     ],
     link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }]
   },
-
+  env: {
+    baseUrl: process.env.BASE_URL || "http://localhost:3000"
+  },
+  router: {
+    // middleware: "auth",
+    prefetchLinks: false,
+    base: "/mcq_donateurs/"
+  },
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [],
 
