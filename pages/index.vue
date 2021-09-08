@@ -1,7 +1,7 @@
 <template>
   <div>
-    <button v-for="i in 6" :key="i">
-      <nuxt-link :to="'/display/' + i">{{ i }}</nuxt-link>
+    <button v-for="i in 7" :key="i">
+      <nuxt-link :to="'/display/' + (i - 1)">{{ i - 1 }}</nuxt-link>
     </button>
     <!-- <table>
       <tr v-for="t in timeStamps" :key="t.display">

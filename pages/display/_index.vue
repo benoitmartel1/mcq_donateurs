@@ -8,7 +8,7 @@
     </div>
     <div
       :class="['canvas ', { control: display_id == 0 }]"
-      :style="'margin-left:' + -1920 * display_id + 'px'"
+      :style="getOffset()"
     >
       <div class="column" v-for="(col, index) in grid" :key="index">
         <!-- <span class="id">{{ col }}</span> -->
@@ -105,6 +105,11 @@ export default {
       }
 
       return array;
+    },
+    getOffset() {
+      return this.display_id > 0
+        ? "margin-left:" + -1920 * (this.display_id - 1) + "px"
+        : "";
     },
     getName(item) {
       return item.compagnie ? item.compagnie : item.prenom + " " + item.nom;
@@ -207,7 +212,11 @@ export default {
         .subscribe();
       if (updateSuscribe) {
         {
-          if (this.display_id > 0) this.startLogInLoop();
+          if (this.display_id > 0) {
+            this.startLogInLoop();
+          } else {
+            this.startAnimation();
+          }
           clearInterval(subscribeInterval);
         }
       }
@@ -250,7 +259,7 @@ html {
 }
 .canvas.control {
   border: 3px yellow solid;
-  transform: scale(0.2);
+  transform: scale(0.165);
   transform-origin: 0 0;
 }
 .canvas.control .column {
@@ -311,7 +320,7 @@ html {
   background: greenyellow;
 }
 .name .niveau {
-  font-size: 20px;
+  font-size: 48px;
 }
 
 .name.Visionnaire {
@@ -356,7 +365,7 @@ html {
   }
   100% {
     opacity: 0;
-    transform: translateX(-300px);
+    transform: translateX(-500px);
   }
 }
 </style>
