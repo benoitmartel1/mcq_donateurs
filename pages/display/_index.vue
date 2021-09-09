@@ -12,17 +12,19 @@
     >
       <div class="column" v-for="(col, index) in grid" :key="index">
         <!-- <span class="id">{{ col }}</span> -->
-        <div class="row" v-for="(row, r) in col" :key="(index + 1) * r">
-          <!-- <span class="id">{{ row }}</span> -->
-          <transition name="fade">
-            <div
-              v-show="Object.keys(row).length > 0"
-              :class="['name ', row.niveau]"
-            >
-              {{ getName(row) }}
-              <div class="niveau">{{ row.niveau }}</div>
-            </div>
-          </transition>
+        <div v-if="index == display_id - 1 || display_id == 0">
+          <div class="row" v-for="row in col" :key="row.id">
+            <!-- <span class="id">{{ row }}</span> -->
+            <transition name="fade">
+              <div
+                v-show="Object.keys(row).length > 0"
+                :class="['name ', row.niveau]"
+              >
+                {{ getName(row) }}
+                <div class="niveau">{{ row.niveau }}</div>
+              </div>
+            </transition>
+          </div>
         </div>
       </div>
     </div>
@@ -30,17 +32,17 @@
 </template>
 
 <script>
-const nameTriggerDelay = 1000;
+const nameTriggerDelay = 600;
 const numberOfDisplays = 6;
 
 const hierarchy = [
-  { name: "Visionnaire", time: 18 },
-  { name: "Pionnier", time: 18 },
-  { name: "Précurseur", time: 14 },
-  { name: "Explorateur", time: 12 },
-  { name: "Découvreur", time: 10 },
-  { name: "Bâtisseur", time: 7 },
-  { name: "Artisan", time: 5 }
+  { name: "Visionnaire", time: 15 },
+  { name: "Pionnier", time: 15 },
+  { name: "Précurseur", time: 15 },
+  { name: "Explorateur", time: 15 },
+  { name: "Découvreur", time: 15 },
+  { name: "Bâtisseur", time: 15 },
+  { name: "Artisan", time: 15 }
 ];
 const triggerToDisplayOrder = [3, 0, 4, 2, 5, 1];
 const triggerToRowOrder = [3, 0, 4, 2, 1];
@@ -58,14 +60,7 @@ export default {
       currentNameIndex: 0,
       counter: 0,
       names: [],
-      grid: [
-        [{}, {}, {}, {}, {}],
-        [{}, {}, {}, {}, {}],
-        [{}, {}, {}, {}, {}],
-        [{}, {}, {}, {}, {}],
-        [{}, {}, {}, {}, {}],
-        [{}, {}, {}, {}, {}]
-      ]
+      grid: []
     };
   },
   async fetch() {
@@ -73,6 +68,7 @@ export default {
     const { data, error } = await this.$db
       .from("mcq_content")
       .select("niveau, compagnie, nom, prenom, id");
+    //   .limit(100);
     if (data) {
       //   this.names = this.filterNamesByDisplayId(data, this.display_id);
       this.names = this.shuffle(data, 12);
@@ -82,30 +78,6 @@ export default {
     this.startSubscribeLoop();
   },
   methods: {
-    random(seed) {
-      var x = Math.sin(seed++) * 10000;
-      return x - Math.floor(x);
-    },
-    shuffle(array, seed) {
-      // <-- ADDED ARGUMENT
-      var m = array.length,
-        t,
-        i;
-
-      // While there remain elements to shuffle…
-      while (m) {
-        // Pick a remaining element…
-        i = Math.floor(this.random(seed) * m--); // <-- MODIFIED LINE
-
-        // And swap it with the current element.
-        t = array[m];
-        array[m] = array[i];
-        array[i] = t;
-        ++seed; // <-- ADDED LINE
-      }
-
-      return array;
-    },
     getOffset() {
       return this.display_id > 0
         ? "margin-left:" + -1920 * (this.display_id - 1) + "px"
@@ -113,6 +85,16 @@ export default {
     },
     getName(item) {
       return item.compagnie ? item.compagnie : item.prenom + " " + item.nom;
+    },
+    createGrid() {
+      this.grid = [];
+      for (let col = 0; col < numberOfDisplays; col++) {
+        let column = [];
+        for (let row = 0; row < 5; row++) {
+          column.push({});
+        }
+        this.grid.push(column);
+      }
     },
     // filterNamesByDisplayId(data, id) {
     //   let filteredData = [];
@@ -167,34 +149,81 @@ export default {
         let tempRow = triggerToRowOrder[(index + rowOffset) % 5];
         if (Object.keys(this.grid[column][tempRow]) == 0) row = tempRow;
       }
-      return { row: row, column: column };
+      return [column, row];
     },
     getDuration(name) {
-      console.log(name.niveau);
-      if (name.niveau) {
+      //   console.log(name.niveau);
+      if (name) {
         let hierachyItem = hierarchy.filter(item => {
           return item.name == name.niveau;
         })[0];
-        console.log(hierachyItem);
+        // console.log(hierachyItem);
         return hierachyItem.time;
       } else {
-        return 1;
+        return 10;
       }
     },
     startAnimation() {
+      //Remove all timers--------------
       clearInterval(counterInterval);
       clearInterval(nameTriggerInterval);
+
+      for (var i = setTimeout(function() {}, 0); i > 0; i--) {
+        window.clearInterval(i);
+        window.clearTimeout(i);
+        if (window.cancelAnimationFrame) window.cancelAnimationFrame(i);
+      }
+
+      //Clean the grid--------------
+      this.createGrid();
+
+      //Reset the main index
       this.currentNameIndex = 0;
-      //The loop that trigger the next name apparition
+
+      //The loop that triggers the next name apparition
       nameTriggerInterval = setInterval(() => {
-        let slot = this.findSlot();
-        this.grid[slot.column][slot.row] = this.names[this.currentNameIndex];
-        setTimeout(() => {
-          this.grid[slot.column][slot.row] = {};
-        }, this.getDuration(this.names[this.currentNameIndex]) * 1000);
-        this.currentNameIndex++;
-        console.log(this.grid);
-        console.log(this.names.length);
+        let currentName = this.names[this.currentNameIndex];
+
+        if (currentName) {
+          //Find next available location
+          let slot = this.findSlot();
+
+          //Copy name object in slot of grid
+          this.grid[slot[0]][slot[1]] = currentName;
+          console.log(
+            "copied " +
+              currentName.compagnie +
+              " | " +
+              currentName.nom +
+              "to " +
+              slot[0] +
+              ":" +
+              slot[1]
+          );
+          let isLast = this.currentNameIndex + 1 >= this.names.length;
+          //Set timeout to remove object from grid
+          setTimeout(() => {
+            console.log("timeout");
+            this.grid[slot[0]][slot[1]] = {};
+            console.log("Removed " + slot[0] + ":" + slot[1]);
+
+            //If last name
+            if (isLast) {
+              console.log("Animation done.");
+              if (this.display_id == 1 || this.display_id == 0) {
+                this.startLogInLoop();
+              }
+            }
+          }, this.getDuration(currentName) * 1000);
+
+          this.currentNameIndex++;
+          //Restart names if no more items in names
+          if (this.currentNameIndex >= this.names.length)
+            clearInterval(nameTriggerInterval);
+          //   this.currentNameIndex == 0;
+        }
+        // console.log(this.grid);
+        // console.log(this.names.length);
       }, nameTriggerDelay);
 
       // Simple timer
@@ -204,9 +233,12 @@ export default {
       }, 100);
     },
     async subscribe() {
+      console.log("subscribing...");
       const updateSuscribe = await this.$db
         .from("mcq_displays")
         .on("UPDATE", payload => {
+          console.log("Subscribe Receive :");
+          console.log(payload);
           this.startAnimation();
         })
         .subscribe();
@@ -222,10 +254,11 @@ export default {
       }
     },
     async logIn() {
+      console.log("logging in...");
       const { data, error } = await this.$db
         .from("mcq_displays")
         .update({ updated_at: "now()" })
-        .eq("display", this.display_id);
+        .eq("display", this.display_id == 0 ? 1 : this.display_id);
       if (data) {
         console.log(
           "Display " +
@@ -235,6 +268,30 @@ export default {
         );
         clearInterval(logInInterval);
       }
+    },
+    random(seed) {
+      var x = Math.sin(seed++) * 10000;
+      return x - Math.floor(x);
+    },
+    shuffle(array, seed) {
+      // <-- ADDED ARGUMENT
+      var m = array.length,
+        t,
+        i;
+
+      // While there remain elements to shuffle…
+      while (m) {
+        // Pick a remaining element…
+        i = Math.floor(this.random(seed) * m--); // <-- MODIFIED LINE
+
+        // And swap it with the current element.
+        t = array[m];
+        array[m] = array[i];
+        array[i] = t;
+        ++seed; // <-- ADDED LINE
+      }
+
+      return array;
     }
   }
 };
@@ -252,6 +309,11 @@ html {
 }
 * {
   box-sizing: border-box;
+}
+* {
+  font-smooth: always;
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .canvas {
   display: flex;
@@ -320,52 +382,64 @@ html {
   background: greenyellow;
 }
 .name .niveau {
-  font-size: 48px;
+  font-size: 22px;
+  letter-spacing: 0.5em;
 }
-
+.name {
+  width: 1600px;
+  margin: auto;
+  animation: moveLeft 15s linear both;
+}
 .name.Visionnaire {
-  font-size: 300px;
-  animation: moveLeft 18s linear both;
+  font-size: 120px;
 }
 .name.Pionnier {
-  font-size: 300px;
-  animation: moveLeft 18s linear both;
+  font-size: 120px;
 }
 .name.Précurseur {
-  font-size: 200px;
-  animation: moveLeft 14s linear both;
+  font-size: 100px;
 }
 .name.Explorateur {
-  font-size: 160px;
-  animation: moveLeft 12s linear both;
+  font-size: 90px;
 }
 .name.Découvreur {
-  font-size: 120px;
-  animation: moveLeft 10s linear both;
+  font-size: 80px;
 }
 .name.Bâtisseur {
-  font-size: 100px;
-  animation: moveLeft 7s linear both;
+  font-size: 70px;
 }
 .name.Artisan {
-  font-size: 70px;
-  animation: moveLeft 5s linear both;
+  font-size: 60px;
 }
-
+.column .row:nth-child(2) .name,
+.column .row:nth-child(4) .name {
+  margin-left: 160px;
+  transform-origin: 1000 50%;
+}
+.column .row:nth-child(3) .name {
+  margin-left: -160px;
+  transform-origin: 0 0;
+}
 @keyframes moveLeft {
   0% {
-    transform: translateX(0);
+    transform: scale(1) perspective(1200px) translate3d(0, 0, 0);
     opacity: 0;
+    /* margin-top: 0; */
+    filter: blur(20px);
   }
-  15% {
+  25% {
+    filter: blur(0);
     opacity: 1;
   }
-  85% {
+  75% {
+    filter: blur(0);
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translateX(-500px);
+    filter: blur(20px);
+    /* margin-top: 200px; */
+    transform: scale(1.3) perspective(1200px) translate3d(0, 0, 0);
   }
 }
 </style>
