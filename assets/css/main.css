@@ -1,0 +1,10 @@
+@font-face {
+  font-family: "Wigrum";
+  src: local("Wigrum"),
+    url(~assets/fonts/Wigrum/Wigrum/wigrum-medium.otf) format("opentype");
+}
+@font-face {
+  font-family: "Butler";
+  src: local("Butler"),
+    url(~assets/fonts/butler/Butler_Webfont/Butler-Medium.woff) format("woff");
+}

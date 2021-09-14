@@ -15,9 +15,9 @@ export default {
           "https://cdnjs.cloudflare.com/ajax/libs/json2html/2.1.0/json2html.min.js"
       }
     ],
-    title: "mcq_donateurs",
+    title: "MCQ | Donateurs",
     htmlAttrs: {
-      lang: "en"
+      lang: "fr"
     },
     meta: [
       { charset: "utf-8" },
@@ -36,10 +36,10 @@ export default {
     base: "/mcq_donateurs/"
   },
   // Global CSS: https://go.nuxtjs.dev/config-css
-  css: [],
+  css: ["element-ui/lib/theme-chalk/index.css", "~assets/css/main.css"],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: ["@/plugins/supabase"],
+  plugins: ["@/plugins/element-ui", "@/plugins/supabase"],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -48,7 +48,9 @@ export default {
   buildModules: [],
 
   // Modules: https://go.nuxtjs.dev/config-modules
-  modules: []
-
+  modules: [],
+  build: {
+    transpile: [/^element-ui/]
+  }
   // Build Configuration: https://go.nuxtjs.dev/config-build
 };
