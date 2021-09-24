@@ -8,3 +8,9 @@
   src: local("Butler"),
     url(~assets/fonts/butler/Butler_Webfont/Butler-Medium.woff) format("woff");
 }
+@font-face {
+  font-family: "Optimo-Theinhardt";
+  src: local("Optimo-Theinhardt"),
+    url(~assets/fonts/Optimo-Theinhardt/Theinhardt-Regular.otf)
+      format("opentype");
+}

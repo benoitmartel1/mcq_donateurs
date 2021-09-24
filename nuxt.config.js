@@ -27,13 +27,12 @@ export default {
     ],
     link: [{ rel: "icon", type: "image/x-icon", href: "/favicon.ico" }]
   },
-  env: {
-    baseUrl: process.env.BASE_URL || "http://localhost:3000"
-  },
+  //   env: {
+  //     baseUrl: process.env.BASE_URL || "http://localhost:3000"
+  //   },
   router: {
-    // middleware: "auth",
     prefetchLinks: false,
-    base: "/mcq_donateurs/"
+    base: process.env.NODE_ENV == "production" ? "/mcq_donateurs/" : ""
   },
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: ["element-ui/lib/theme-chalk/index.css", "~assets/css/main.css"],
@@ -45,7 +44,7 @@ export default {
   components: true,
 
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules
-  buildModules: [],
+  buildModules: ["@nuxtjs/dotenv"],
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [],

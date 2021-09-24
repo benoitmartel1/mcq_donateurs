@@ -1,13 +1,13 @@
 <template>
   <div class="display">
-    <div v-if="showGrid" class="grid">
+    <div v-show="showGrid" class="grid">
       <div v-for="c in 16" :key="c" class="c">
         <div v-for="r in 10" :key="r" class="r">{{ (r - 1) * 16 + c }}</div>
       </div>
     </div>
-    <div class="infos">
+    <div class="infos" v-show="showInfos">
       <div>Écran {{ display_id }}</div>
-      <div>{{ currentNameIndex }}</div>
+      <div>Nom : {{ currentNameIndex }} / {{ names.length }}</div>
       <div>{{ Math.floor(counter * 10) / 10 }}</div>
       <div v-show="Math.floor((counter % 5) * 10) < 1" class="flash"></div>
     </div>
@@ -18,14 +18,15 @@
       <div class="column" v-for="(col, index) in grid" :key="index">
         <!-- <span class="id">{{ col }}</span> -->
         <div v-if="index == display_id - 1 || display_id == 0">
-          <div class="row" v-for="row in col" :key="row.id">
+          <div class="row" v-for="(row, rowIndex) in col" :key="row.id">
             <!-- <span class="id">{{ row }}</span> -->
             <transition name="fade">
               <div
                 v-show="Object.keys(row).length > 0"
                 :class="['name ', row.niveau]"
+                :style="setStyle(row, rowIndex)"
               >
-                {{ getName(row) }}
+                <div v-html="getName(row)"></div>
                 <div class="niveau">{{ row.niveau }}</div>
               </div>
             </transition>
@@ -41,7 +42,8 @@
 const nameTriggerDelay = 600;
 
 //Nombre de displays
-const numberOfDisplays = 6;
+const numberOfDisplays = 7;
+const numberOfRows = 4;
 
 //Paramètres par catégorie pour l'affichage {Nom de la catégorie, durée de l'affichage, Nombre d'apparitions au total}
 const hierarchy = [
@@ -54,8 +56,8 @@ const hierarchy = [
   { name: "Artisan", time: 15, exposure: 1 }
 ];
 //Chaque nom de la loop est attribué au prochain display/row défini par ces arrays
-const triggerToDisplayOrder = [3, 0, 4, 2, 5, 1];
-const triggerToRowOrder = [3, 0, 4, 2, 1];
+const triggerToDisplayOrder = [3, 0, 4, 2, 5, 1, 6];
+const triggerToRowOrder = [3, 0, 2, 1];
 
 let counterInterval;
 let nameTriggerInterval;
@@ -71,30 +73,40 @@ export default {
       counter: 0,
       names: [],
       grid: [],
-      showGrid: false
+      showGrid: false,
+      showInfos: false
     };
   },
   async fetch() {
     //Fetch all names in supabase db
     this.display_id = this.$route.params.index;
-    const { data, error } = await this.$db
+    const names = await this.$db
       .from("mcq_content")
-      .select("niveau, compagnie, nom, prenom, id");
-    if (data) {
-      this.names = this.applyExposure(data);
-      console.log(this.names);
+      .select("niveau, compagnie, nom, prenom, id")
+      .order("compagnie")
+      .then(res => {
+        return res.data;
+      })
+      .catch(err => {
+        console.log(err);
+      });
+    if (names) {
+      this.names = this.applyExposure(names);
     }
-    if (data) {
-      this.names = this.applyExposure(data);
-      console.log(this.names);
-    }
-    this.showGrid = await this.$db
+    const status = await this.$db
       .from("mcq_status")
-      .select("showGrid")
+      .select("show_grid, show_infos")
       .eq("id", 1)
       .then(res => {
-        return res.data[0].showGrid;
+        return res.data[0];
+      })
+      .catch(err => {
+        console.log(err);
       });
+    if (status) {
+      this.showGrid = status.show_grid;
+      this.showInfos = status.show_infos;
+    }
   },
   mounted() {
     this.startSubscribeLoop();
@@ -146,8 +158,10 @@ export default {
           );
         }
       });
+
       //Mélanger les noms à l'intérieur des sous-groupes et remettre tous les noms dans une seule array
       for (let i = 0; i < max; i++) {
+        //mergedNames = mergedNames.concat(splittedNames[i]);
         mergedNames = mergedNames.concat(this.shuffle(splittedNames[i], 12));
       }
       return mergedNames;
@@ -167,7 +181,8 @@ export default {
       const updateSuscribe = await this.$db
         .from("mcq_status")
         .on("UPDATE", payload => {
-          this.showGrid = payload.new.showGrid;
+          this.showGrid = payload.new.show_grid;
+          this.showInfos = payload.new.show_infos;
           //   console.log(payload.new.showGrid);
         })
         .subscribe();
@@ -212,6 +227,7 @@ export default {
       }
     },
     startAnimation() {
+      console.log("Starting");
       //Remove all timers--------------
       clearInterval(counterInterval);
       clearInterval(nameTriggerInterval);
@@ -238,22 +254,11 @@ export default {
 
           //Copy name object in slot of grid
           this.grid[slot[0]][slot[1]] = currentName;
-          //   console.log(
-          //     "copied " +
-          //       currentName.compagnie +
-          //       " | " +
-          //       currentName.nom +
-          //       "to " +
-          //       slot[0] +
-          //       ":" +
-          //       slot[1]
-          //   );
+
           let isLast = this.currentNameIndex + 1 >= this.names.length;
           //Set timeout to remove object from grid
           setTimeout(() => {
-            // console.log("timeout");
             this.grid[slot[0]][slot[1]] = {};
-            // console.log("Removed " + slot[0] + ":" + slot[1]);
 
             //If last name
             if (isLast) {
@@ -268,10 +273,7 @@ export default {
           //Restart names if no more items in names
           if (this.currentNameIndex >= this.names.length)
             clearInterval(nameTriggerInterval);
-          //   this.currentNameIndex == 0;
         }
-        // console.log(this.grid);
-        // console.log(this.names.length);
       }, nameTriggerDelay);
 
       // Simple timer
@@ -280,12 +282,35 @@ export default {
         this.counter += 0.1;
       }, 100);
     },
+    setStyle(row, rowIndex) {
+      if (row.id !== undefined) {
+        let offset = (30 - this.getName(row).length) * 30;
+        offset = parseInt(offset < 0 ? 20 : offset);
+        console.log(this.getName(row) + " " + offset);
+        switch (rowIndex) {
+          case 0:
+            return "margin-left: " + offset * 0.5 + "px";
+            break;
+          case 1:
+            return "margin-right: " + offset + "px";
+            break;
+          //   case 2:
+          //     return "margin-left: " + offset + "px";
+          //     break;
+          case 3:
+            return "margin-right: " + offset * 0.5 + "px";
+            break;
+          default:
+            return "";
+        }
+      }
+    },
     createGrid() {
       //Populate the grid which keeps track of which name shows up where
       this.grid = [];
       for (let col = 0; col < numberOfDisplays; col++) {
         let column = [];
-        for (let row = 0; row < 5; row++) {
+        for (let row = 0; row < numberOfRows; row++) {
           column.push({});
         }
         this.grid.push(column);
@@ -299,7 +324,8 @@ export default {
       let columnOffset = 0;
       let rowOffset = 0;
       while (column == undefined) {
-        let tempColumn = triggerToDisplayOrder[(index + columnOffset) % 6];
+        let tempColumn =
+          triggerToDisplayOrder[(index + columnOffset) % numberOfDisplays];
         if (
           this.grid[tempColumn].filter(row => {
             return Object.keys(row) == 0;
@@ -309,7 +335,7 @@ export default {
         }
       }
       while (row == undefined) {
-        let tempRow = triggerToRowOrder[(index + rowOffset) % 5];
+        let tempRow = triggerToRowOrder[(index + rowOffset) % numberOfRows];
         if (Object.keys(this.grid[column][tempRow]) == 0) row = tempRow;
       }
       return [column, row];
@@ -335,32 +361,14 @@ export default {
         : "";
     },
     getName(item) {
-      return item.compagnie ? item.compagnie : item.prenom + " " + item.nom;
+      return this.formatLineBreak(
+        item.compagnie ? item.compagnie : item.prenom + " " + item.nom
+      );
     },
-
-    // filterNamesByDisplayId(data, id) {
-    //   let filteredData = [];
-    //   let sortedData = this.sortByNiveau(data);
-    //   let counter = 0;
-    //   for (let niveau = 0; niveau < sortedData.length; niveau++) {
-    //     for (let item = 0; item < sortedData[niveau].items.length; item++) {
-    //       if (counter % numberOfDisplays == id - 1)
-    //         filteredData.push(sortedData[niveau].items[item]);
-    //       counter++;
-    //     }
-    //   }
-    //   return filteredData;
-    // },
-    // sortByNiveau(src) {
-    //   let temp = [];
-    //   hierarchy.forEach(niveau => {
-    //     temp.push({
-    //       niveau: niveau,
-    //       items: src.filter(item => item.niveau == niveau)
-    //     });
-    //   });
-    //   return temp;
-    // },
+    formatLineBreak(str) {
+      let lineBreakSymbol = "--";
+      return str.replace(lineBreakSymbol, "<br>");
+    },
 
     getDuration(name) {
       //Returns the defined duration for the matching niveau
@@ -382,14 +390,19 @@ export default {
 </script>
 
 <style>
-/* @import url("https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap"); */
+:root {
+  --nbOfDisplays: 7;
+  --nbOfRows: 4;
+  --displayWidth: 1920px;
+  --displayHeight: 1200px;
+}
 body,
 html {
-  /* font-family: "Lato", sans-serif; */
   text-align: center;
   margin: 0;
   padding: 0;
   color: white;
+  background: black;
 }
 * {
   box-sizing: border-box;
@@ -401,25 +414,30 @@ html {
 }
 .canvas {
   display: flex;
-  width: calc(1920px * 6);
+  width: calc(1920px * var(--nbOfDisplays));
 }
 .canvas.control {
+  margin: auto;
   border: 3px yellow solid;
-  transform: scale(0.165);
+  transform: scale(0.14);
   transform-origin: 0 0;
 }
 .canvas.control .column {
-  border: 3px red solid;
+  border: 4px rgba(255, 142, 142, 0.8) dotted;
 }
 
 .canvas .column {
-  width: 1920px;
-  height: 1080px;
-  padding: 100px;
+  width: var(--displayWidth);
+  height: var(--displayHeight);
+  padding-top: 50px;
 }
 .canvas .row {
+  display: flex;
+  font-size: 54px;
+  /* justify-content: center; */
+  align-items: center;
   /* border: 1px green solid; */
-  height: calc(880px / 5);
+  height: calc((var(--displayHeight) - 100px) / var(--nbOfRows));
 }
 .fade-enter-active,
 .fade-leave-active {
@@ -435,7 +453,7 @@ html {
 }
 .display {
   background: black;
-  border: 1px solid blue;
+  /* border: 1px solid blue; */
   color: white;
   width: 1920px;
   height: 1200px;
@@ -444,18 +462,13 @@ html {
   overflow: hidden;
 }
 .infos {
-  display: inline-block;
-  font-size: 12px;
+  font-size: 32px;
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 30px;
+  left: 30px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   align-items: flex-start;
-  height: 100px;
-  width: 1920px;
-  padding: 10px;
 }
 
 .flash {
@@ -466,56 +479,72 @@ html {
 }
 
 .name {
-  font-family: "Wigrum";
-  width: 1600px;
-  margin: auto;
+  /* border: 1px orange solid; */
+  font-family: "Butler";
+  max-width: 1600px;
+  line-height: 1.2em;
+  /* margin: auto; */
   animation: moveLeft 15s linear both;
 }
 .name .niveau {
-  font-family: "Butler";
-  font-size: 22px;
+  font-family: "Optimo-Theinhardt";
+  font-size: 0.32em;
+  line-height: 1.4em;
   letter-spacing: 0.5em;
 }
-.column:nth-child(even) .name {
-  font-family: "Butler";
-}
-.column:nth-child(even) .niveau {
-  font-family: "Wigrum";
-}
+
 .name.Visionnaire {
-  font-size: 120px;
+  font-size: 2em;
 }
 .name.Pionnier {
-  font-size: 120px;
+  font-size: 2em;
 }
 .name.Précurseur {
-  font-size: 100px;
+  font-size: 1.75em;
 }
 .name.Explorateur {
-  font-size: 90px;
+  font-size: 1.5em;
 }
 .name.Découvreur {
-  font-size: 80px;
+  font-size: 1.35em;
 }
 .name.Bâtisseur {
-  font-size: 70px;
+  font-size: 1.2em;
 }
 .name.Artisan {
-  font-size: 60px;
+  font-size: 1em;
+}
+.column .row:nth-child(2),
+.column .row:nth-child(4) {
+  justify-content: flex-end;
+}
+.column .row:nth-child(3) {
+  justify-content: center;
+  align-items: center;
+}
+.column .row:nth-child(3) .name {
+  transform-origin: 50% 50%;
 }
 .column .row:nth-child(2) .name,
 .column .row:nth-child(4) .name {
-  margin-left: 160px;
-  transform-origin: 1000 50%;
+  transform-origin: 100% 50%;
 }
-.column .row:nth-child(3) .name {
-  margin-left: -160px;
-  transform-origin: 0 0;
+.column .row:nth-child(1) .name {
+  transform-origin: 0 50%;
+}
+.column:nth-child(1) .row:nth-child(1) {
+  /* background: chartreuse; */
+  margin-left: 60px;
+}
+.column:last-child .row:nth-child(2),
+.column:last-child .row:nth-child(4) {
+  /* background: chartreuse; */
+  margin-right: 60px;
 }
 .grid {
   position: absolute;
-  min-width: 1920px;
-  min-height: 1200px;
+  min-width: var(--displayWidth);
+  min-height: var(--displayHeight);
   display: flex;
 
   align-items: stretch;

@@ -1,5 +1,11 @@
 <template>
   <div class="inner">
+    <div class="notice">
+      Si un nom est trop long, forcez un retour à la ligne (Enter) dans ce
+      dernier en inscrivant :
+      <br /><b>-- ( deux traits d'union )</b><br />
+      à l'endroit de la coupure dans la cellule du fichier Excel avant l'upload.
+    </div>
     <div class="btn">
       <div>
         <label
@@ -171,6 +177,7 @@ export default {
 body {
   font-size: 18px;
   font-family: "Lato", sans-serif;
+  margin: 0;
 }
 #output {
   display: flex;
@@ -191,6 +198,7 @@ h3 {
 }
 .btn {
   margin-top: 50px;
+
   /* text-align: center; */
   display: flex;
   /* align-items: center; */
@@ -230,7 +238,18 @@ input[type="file"] {
 .custom-file-upload {
   border: 1px solid #ccc;
   display: inline-block;
-  padding: 6px 12px;
+  padding: 10px 18px;
   cursor: pointer;
+  border-radius: 50px;
+}
+.notice {
+  font-size: 0.9em;
+  width: max-content;
+  margin: auto;
+  text-align: center;
+  /* width: 100%; */
+  padding: 10px 30px;
+  color: white;
+  background: lightskyblue;
 }
 </style>

@@ -2,8 +2,8 @@
   <div class="dashboard">
     <el-row>
       <div style="display:none">
-        <div v-for="i in 6" :key="i">
-          <nuxt-link class="container" :to="'/display/' + i"></nuxt-link>
+        <div v-for="i in 8" :key="i">
+          <nuxt-link class="container" :to="'/display/' + (i - 1)"></nuxt-link>
         </div>
       </div>
       <ul>
@@ -32,9 +32,13 @@
         </li>
       </ul>
     </el-row>
-    <el-row>
-      <span>Activer la grille</span>
-      <el-switch @change="toggleGrid()" v-model="showGrid"> </el-switch>
+    <el-row class="switches">
+      <span>Afficher la grille</span>
+      <el-switch @change="toggleSwitch()" v-model="showGrid"> </el-switch>
+      <br />
+
+      <span>Afficher les infos</span>
+      <el-switch @change="toggleSwitch()" v-model="showInfos"> </el-switch>
     </el-row>
   </div>
 </template>
@@ -43,16 +47,18 @@
 let lastTimestamps = [];
 export default {
   data() {
-    return { timeStamps: [], showGrid: false };
+    return { timeStamps: [], showGrid: false, showInfos: false };
   },
   async fetch() {
-    this.showGrid = await this.$db
+    const { data, error } = await this.$db
       .from("mcq_status")
-      .select("showGrid")
-      .eq("id", 1)
-      .then(res => {
-        return res.data[0].showGrid;
-      });
+      .select("show_grid, show_infos")
+      .eq("id", 1);
+
+    if (data) {
+      this.showGrid = data[0].show_grid;
+      this.showInfos = data[0].show_infos;
+    }
   },
   mounted() {
     this.checkStatus();
@@ -65,16 +71,16 @@ export default {
       const { data, error } = await this.$db
         .from("mcq_displays")
         .select("updated_at, display")
-        .lt("display", 7)
+        .lt("display", 8)
         .order("display");
       if (data) {
         return data;
       }
     },
-    async toggleGrid() {
+    async toggleSwitch() {
       const { data, error } = await this.$db
         .from("mcq_status")
-        .update({ showGrid: this.showGrid })
+        .update({ show_grid: this.showGrid, show_infos: this.showInfos })
         .eq("id", 1);
       if (error) {
         console.log(error);
@@ -101,14 +107,14 @@ export default {
         resolve(this.getNewStatus());
       }).then(displays => {
         let total = 0;
-
-        displays.map((d, index) => {
-          d.status = new Date() - new Date(d.updated_at);
-          d.status = Boolean(d.status / (1000 * 60 * 60 * 24) < 1);
-          return d;
-        });
-
-        this.timeStamps = displays;
+        if (displays) {
+          displays.map((d, index) => {
+            d.status = new Date() - new Date(d.updated_at);
+            d.status = Boolean(d.status / (1000 * 60 * 60 * 24) < 1);
+            return d;
+          });
+          this.timeStamps = displays;
+        }
       });
     }
   }
@@ -183,5 +189,9 @@ a {
 }
 .container .updated_at {
   width: 400px;
+}
+.switches > span {
+  min-width: 150px;
+  display: inline-block;
 }
 </style>
