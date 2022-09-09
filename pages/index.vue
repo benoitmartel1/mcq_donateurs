@@ -39,6 +39,12 @@
 
       <span>Afficher les infos</span>
       <el-switch @change="toggleSwitch()" v-model="showInfos"> </el-switch>
+      <br />
+      <span>Instensité du background</span>
+      <div class="block">
+        <el-slider @change="toggleSwitch()" v-model="backLevel" show-input>
+        </el-slider>
+      </div>
     </el-row>
   </div>
 </template>
@@ -47,17 +53,18 @@
 let lastTimestamps = [];
 export default {
   data() {
-    return { timeStamps: [], showGrid: false, showInfos: false };
+    return { timeStamps: [], showGrid: false, showInfos: false, backLevel: 0 };
   },
   async fetch() {
     const { data, error } = await this.$db
       .from("mcq_status")
-      .select("show_grid, show_infos")
+      .select("*")
       .eq("id", 1);
 
     if (data) {
       this.showGrid = data[0].show_grid;
       this.showInfos = data[0].show_infos;
+      this.backLevel = data[0].back_level;
     }
   },
   mounted() {
@@ -80,7 +87,11 @@ export default {
     async toggleSwitch() {
       const { data, error } = await this.$db
         .from("mcq_status")
-        .update({ show_grid: this.showGrid, show_infos: this.showInfos })
+        .update({
+          show_grid: this.showGrid,
+          show_infos: this.showInfos,
+          back_level: this.backLevel
+        })
         .eq("id", 1);
       if (error) {
         console.log(error);

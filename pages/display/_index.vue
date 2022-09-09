@@ -1,5 +1,10 @@
 <template>
-  <div class="display">
+  <div
+    class="display"
+    :style="{
+      background: 'rgba(255, 255, 255, ' + backLevel / 100 + ')'
+    }"
+  >
     <div v-show="showGrid" class="grid">
       <div v-for="c in 16" :key="c" class="c">
         <div v-for="r in 10" :key="r" class="r">{{ (r - 1) * 16 + c }}</div>
@@ -26,7 +31,7 @@
                 :class="['name ', row.niveau]"
                 :style="setStyle(row, rowIndex)"
               >
-                <div v-html="getName(row)"></div>
+                <div class="nameToBlur" v-html="getName(row)"></div>
                 <div class="niveau">{{ row.niveau }}</div>
               </div>
             </transition>
@@ -74,7 +79,8 @@ export default {
       names: [],
       grid: [],
       showGrid: false,
-      showInfos: false
+      showInfos: false,
+      backLevel: 0
     };
   },
   async fetch() {
@@ -95,7 +101,7 @@ export default {
     }
     const status = await this.$db
       .from("mcq_status")
-      .select("show_grid, show_infos")
+      .select("*")
       .eq("id", 1)
       .then(res => {
         return res.data[0];
@@ -104,14 +110,17 @@ export default {
         console.log(err);
       });
     if (status) {
+      //   console.log(status);
       this.showGrid = status.show_grid;
       this.showInfos = status.show_infos;
+      this.backLevel = status.back_level;
     }
   },
   mounted() {
     this.startSubscribeLoop();
     this.statusSubscribe();
   },
+
   methods: {
     applyExposure(arr) {
       //Modifier la liste names selon le nombre d'apparation (exposure) que doit avoir chaque nom
@@ -178,18 +187,19 @@ export default {
     },
     async statusSubscribe() {
       //Subscribe to Supabase Status Table update notifications
-      const updateSuscribe = await this.$db
+      const updateSubscribe = await this.$db
         .from("mcq_status")
         .on("UPDATE", payload => {
           this.showGrid = payload.new.show_grid;
           this.showInfos = payload.new.show_infos;
+          this.backLevel = payload.new.back_level;
           //   console.log(payload.new.showGrid);
         })
         .subscribe();
     },
     async subscribe() {
       //Subscribe to Supabase Table update notifications
-      const updateSuscribe = await this.$db
+      const updateSubscribe = await this.$db
         .from("mcq_displays")
         .on("UPDATE", payload => {
           //A new display just logged in, so all displays must restart
@@ -197,7 +207,7 @@ export default {
           this.startAnimation();
         })
         .subscribe();
-      if (updateSuscribe) {
+      if (updateSubscribe) {
         console.log("Subscribe successful");
         {
           if (this.display_id > 0) {
@@ -286,7 +296,7 @@ export default {
       if (row.id !== undefined) {
         let offset = (30 - this.getName(row).length) * 30;
         offset = parseInt(offset < 0 ? 20 : offset);
-        console.log(this.getName(row) + " " + offset);
+        // console.log(this.getName(row) + " " + offset);
         switch (rowIndex) {
           case 0:
             return "margin-left: " + offset * 0.5 + "px";
@@ -452,7 +462,7 @@ html {
   opacity: 0.2;
 }
 .display {
-  background: black;
+  /* background: white; */
   /* border: 1px solid blue; */
   color: white;
   width: 1920px;
@@ -486,11 +496,15 @@ html {
   /* margin: auto; */
   animation: moveLeft 15s linear both;
 }
+.name .nameToBlur {
+  animation: blurInOut 15s linear both;
+}
 .name .niveau {
   font-family: "Optimo-Theinhardt";
   font-size: 0.32em;
   line-height: 1.4em;
   letter-spacing: 0.5em;
+  animation: blurInOut 15s linear both;
 }
 
 .name.Visionnaire {
@@ -566,24 +580,38 @@ html {
 
 @keyframes moveLeft {
   0% {
-    transform: scale(1) perspective(1200px) translate3d(0, 0, 0);
+    transform: scale(1) perspective(1px) translate3d(0, 0, 0);
     opacity: 0;
+    /* filter: blur(20px); */
     /* margin-top: 0; */
-    filter: blur(20px);
   }
   25% {
-    filter: blur(0);
+    /* filter: blur(0); */
     opacity: 1;
   }
   75% {
-    filter: blur(0);
+    /* filter: blur(0); */
     opacity: 1;
   }
   100% {
     opacity: 0;
-    filter: blur(20px);
+    /* filter: blur(20px); */
     /* margin-top: 200px; */
-    transform: scale(1.3) perspective(1200px) translate3d(0, 0, 0);
+    transform: scale(1) perspective(1px) translate3d(0, 0, 0.2px);
+  }
+}
+@keyframes blurInOut {
+  0% {
+    filter: blur(20px);
+  }
+  25% {
+    filter: blur(0);
+  }
+  75% {
+    filter: blur(0);
+  }
+  100% {
+    filter: blur(20px);
   }
 }
 </style>

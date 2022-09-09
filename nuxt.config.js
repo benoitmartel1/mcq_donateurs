@@ -32,7 +32,7 @@ export default {
   //   },
   router: {
     prefetchLinks: false,
-    base: process.env.NODE_ENV == "production" ? "/mcq_donateurs/" : ""
+    base: process.env.NODE_ENV == "production" ? "" : "/mcq_donateurs/"
   },
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: ["element-ui/lib/theme-chalk/index.css", "~assets/css/main.css"],
