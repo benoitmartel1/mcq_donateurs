@@ -95,11 +95,13 @@ export default {
       });
     this.dataToDisplay.currentData = this.sortByNiveau(this.data.currentData);
   },
+
   methods: {
     async updateDatabase() {
       let clearAllData = await this.$db
         .from("mcq_content")
         .delete()
+        .neq("id", 0)
         .then(res => {
           console.log(res.data);
           return res.data;
